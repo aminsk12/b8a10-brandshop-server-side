@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const app = express();
 const port = process.env.PORT || 5000;
@@ -11,13 +11,12 @@ app.use(express.json());
 
 
 
-console.log(process.env.DB_USER);
-console.log(process.env.DB_PASS);
+
 
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.kcvdpep.mongodb.net/?retryWrites=true&w=majority`;
-console.log(uri);
+
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -43,10 +42,49 @@ async function run() {
         })
 
 
-        app.post('/item', async(req, res)=>{
+        app.get('/item/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await itemCollection.findOne(query);
+            res.send(result);
+        })
+
+
+        app.post('/item', async (req, res) => {
             const newItem = req.body;
             console.log(newItem);
             const result = await itemCollection.insertOne(newItem);
+            res.send(result);
+        })
+
+
+        app.put('/item/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) }
+            const options = { upsert: true };
+            const updatedItem = req.body;
+            const item = {
+                $set: {
+                    image: updatedItem.image,
+                    name: updatedItem.name,
+                    brand: updatedItem.brand,
+                    type: updatedItem.type,
+                    price: updatedItem.price,
+                    description: updatedItem.description,
+                    rating: updatedItem.rating
+                }
+            }
+            const result = await itemCollection.updateOne(filter, item, options);
+            res.send(result);
+        })
+
+        
+
+
+        app.delete('/item/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) }
+            const result = await itemCollection.deleteOne(query);
             res.send(result);
         })
 
